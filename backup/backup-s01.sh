@@ -1,7 +1,8 @@
 #!/bin/bash
 # Backup script for server s01
 # NOTE: Run this script as a user with appropriate permissions to access Nginx configuration files.
-#.      
+#.      Create an environment variable for the user running the script.
+#       Example: export ADMIN_USER="your_username"
 # Define variables
 # Color codes for terminal output
 RED='\e[31m'
@@ -14,10 +15,16 @@ NGINX_CONF="/etc/nginx/nginx.conf"
 NGINX_SITES="/etc/nginx/sites-available"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
 NGINX_SSL="/etc/letsencrypt"
-BACKUP_DIR="/home/"$USER"/backup/s01"
+BACKUP_DIR="/home/"$ADMIN_USER"/backup/s01"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ARCHIVE_NAME="nginx_backup_s01_$TIMESTAMP.tar.gz"   
 
+# TODO: Add user environment variable definition for admin tasks
+# Ensure USER variable is set
+if [ -z "$ADMIN_USER" ]; then
+    echo -e "${RED}Error:${RESET} USER environment variable is not set. Please set it to the appropriate username."
+    exit 1
+fi
 # Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 cd "$BACKUP_DIR"  || { echo "Failed to change directory to "$BACKUP_DIR""; exit 1; }
@@ -28,7 +35,7 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} Backup creation failed!"
     exit 1
 fi
-chown "$USER":"$USER" "$ARCHIVE_NAME"
+chown "$ADMIN_USER":"$ADMIN_USER" "$ARCHIVE_NAME"
 
 echo "Backup created successfully: "$BACKUP_DIR"/"$ARCHIVE_NAME""
 # Remove backups older than 90 days
