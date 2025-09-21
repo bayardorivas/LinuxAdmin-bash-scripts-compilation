@@ -16,6 +16,7 @@ BLUE='\e[34m'
 BOLD='\e[1m'
 RESET='\e[0m'
 
+WORKING_DIR="/home/"$ADMIN_USER"/myscripts/backup"
 NGINX_CONF="/etc/nginx/nginx.conf"
 NGINX_SITES="/etc/nginx/sites-available"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
@@ -30,7 +31,7 @@ MYSQL_DBS="mysql_backup_DBS_$TIMESTAMP.sql.gz"
 # Ensure environment variables are set
 if [[ -f ".env" ]]; then
     set -a
-    source .env
+    source "$WORKING_DIR"/.env
     set +a
 else
     echo -e "${RED}Error:${RESET} .env file not found. Please create a .env file with the required environment variables and assign their values: ADMIN_USER, DB_USER, DB_PASSWORD."
@@ -50,6 +51,8 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} MySQL dump creation failed!"
     exit 1
 fi
+
+rm "$MYSQL_DBS"
 
 # Create the archive
 tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DBS" 
