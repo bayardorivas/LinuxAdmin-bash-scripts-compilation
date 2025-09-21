@@ -52,8 +52,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-rm "$MYSQL_DBS"
-
 # Create the archive
 tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DBS" 
 # Verify if the backup was created successfully
@@ -61,6 +59,9 @@ if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} Backup creation failed!"
     exit 1
 fi
+
+# Remove the temporary MySQL dump file
+rm "$MYSQL_DBS"
 
 # Set ownership to ADMIN_USER
 chown "$ADMIN_USER":"$ADMIN_USER" "$ARCHIVE_NAME"
