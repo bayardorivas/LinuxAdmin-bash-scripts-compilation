@@ -1,8 +1,13 @@
 #!/bin/bash
-# Backup script for server s01
+# Backup script for server with Nginx, MySQL, and Fail2Ban
+# Backs up Nginx configuration files, website data, MySQL databases, and Fail2Ban configurations.
+# Saves the backup in a timestamped tar.gz archive in the specified backup directory.
+# Also removes backups older than 90 days.
 # NOTE: Run this script as a user with appropriate permissions to access Nginx configuration files.
-#.      Create an environment variable for the user running the script.
-#       Example: export ADMIN_USER="your_username"
+#.      Create environment variables for the script using the .env file.
+#       Example: ADMIN_USER="your_username"
+#                DB_USER="your_username"
+#                DB_PASSWORD="your_password"
 # Define variables
 # Color codes for terminal output
 RED='\e[31m'
@@ -19,10 +24,19 @@ DOC_ROOT="/var/www/"
 FAIL2BAN="/etc/fail2ban"
 BACKUP_DIR="/home/"$ADMIN_USER"/backup/s01"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-ARCHIVE_NAME="nginx_backup_s01_$TIMESTAMP.tar.gz"   
-MYSQL_DB_TOUCHDGTAL="mysql_backup_s01_$TIMESTAMP.sql.gz"
-# TODO: Add user environment variable definition for admin tasks
-# Ensure USER variable is set
+ARCHIVE_NAME="backup_server_s01_$TIMESTAMP.tar.gz"   
+MYSQL_DBS="mysql_backup_DBS_$TIMESTAMP.sql.gz"
+
+# Ensure environment variables are set
+if [[ -f ".env" ]]; then
+    set -a
+    source .env
+    set +a
+else
+    echo -e "${RED}Error:${RESET} .env file not found. Please create a .env file with the required environment variables and assign their values: ADMIN_USER, DB_USER, DB_PASSWORD."
+    exit 1
+fi
+
 if [ -z "$ADMIN_USER" ]; then
     echo -e "${RED}Error:${RESET} USER environment variable is not set. Please set it to the appropriate username."
     exit 1
@@ -31,20 +45,21 @@ fi
 mkdir -p "$BACKUP_DIR"
 cd "$BACKUP_DIR"  || { echo "Failed to change directory to "$BACKUP_DIR""; exit 1; }
 
-mysqldump -u root -p --all-databases | gzip > "$MYSQL_DB_TOUCHDGTAL"
+mysqldump -u $DB_USER -p$DB_PASSWORD --all-databases | gzip > "$MYSQL_DBS"
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} MySQL dump creation failed!"
     exit 1
 fi
-#chown "$ADMIN_USER":"$ADMIN_USER" "$MYSQL_DB_TOUCHDGTAL"    
 
 # Create the archive
-tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DB_TOUCHDGTAL" || { echo "Failed to create archive "$ARCHIVE_NAME""; exit 1; }
-# Verify if the archive was created successfully
+tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DBS" 
+# Verify if the backup was created successfully
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} Backup creation failed!"
     exit 1
 fi
+
+# Set ownership to ADMIN_USER
 chown "$ADMIN_USER":"$ADMIN_USER" "$ARCHIVE_NAME"
 
 echo "Backup created successfully: "$BACKUP_DIR"/"$ARCHIVE_NAME""
