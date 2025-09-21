@@ -20,7 +20,7 @@ FAIL2BAN="/etc/fail2ban"
 BACKUP_DIR="/home/"$ADMIN_USER"/backup/s01"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ARCHIVE_NAME="nginx_backup_s01_$TIMESTAMP.tar.gz"   
-MYSQL_DUMP_NAME="mysql_backup_s01_$TIMESTAMP.sql.gz"
+MYSQL_DB_TOUCHDGTAL="mysql_backup_s01_$TIMESTAMP.sql.gz"
 # TODO: Add user environment variable definition for admin tasks
 # Ensure USER variable is set
 if [ -z "$ADMIN_USER" ]; then
@@ -31,8 +31,15 @@ fi
 mkdir -p "$BACKUP_DIR"
 cd "$BACKUP_DIR"  || { echo "Failed to change directory to "$BACKUP_DIR""; exit 1; }
 
+mysqldump -u root -p --all-databases | gzip > "$MYSQL_DB_TOUCHDGTAL"
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error:${RESET} MySQL dump creation failed!"
+    exit 1
+fi
+#chown "$ADMIN_USER":"$ADMIN_USER" "$MYSQL_DB_TOUCHDGTAL"    
+
 # Create the archive
-tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DUMP_NAME" || { echo "Failed to create archive "$ARCHIVE_NAME""; exit 1; }
+tar -czf "$ARCHIVE_NAME" "$NGINX_CONF" "$NGINX_SITES" "$NGINX_SITES_ENABLED" "$NGINX_SSL" "$DOC_ROOT" "$FAIL2BAN" "$MYSQL_DB_TOUCHDGTAL" || { echo "Failed to create archive "$ARCHIVE_NAME""; exit 1; }
 # Verify if the archive was created successfully
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error:${RESET} Backup creation failed!"
