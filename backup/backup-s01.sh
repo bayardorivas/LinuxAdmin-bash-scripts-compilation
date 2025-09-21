@@ -29,7 +29,7 @@ ARCHIVE_NAME="backup_server_s01_$TIMESTAMP.tar.gz"
 MYSQL_DBS="mysql_backup_DBS_$TIMESTAMP.sql.gz"
 
 # Ensure environment variables are set
-if [[ -f ".env" ]]; then
+if [[ -f ""$WORKING_DIR"/.env" ]]; then
     set -a
     source "$WORKING_DIR"/.env
     set +a
