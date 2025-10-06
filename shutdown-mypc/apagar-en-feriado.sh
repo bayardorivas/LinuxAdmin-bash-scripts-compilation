@@ -6,26 +6,22 @@
 #  ej: brivas
 USUARIO=brivas
 
-# Lista de feriados
-FERIADOS=(
-#2025-10-03  
-2025-12-08
-2025-12-25
-2026-01-01
-2026-05-30
-2026-07-19
-)
+# URL del API de feriados
+API_FERIADOS_URL="https://agplanilla.net/api/feriados"
+
+# Respaldo local de feriados en caso de que la API no esté disponible
+FERIADOS_LOCAL_BKUP="/home/$USUARIO/feriados.json"
 
 # Archivo de vacaciones adicionales
 VACACIONES_FILE="/home/$USUARIO/vacaciones.txt"
 
-# Logs de los dias de vacaciones que se apagó
+# Archivo de log
 APAGADO_LOG="/home/$USUARIO/apagado.log"
 
 # Obtener la fecha de hoy en formato YYYY-MM-DD
 HOY=$(date +%Y-%m-%d)
 
-# Función para programar el apagado a las 7 PM
+### Función para programar el apagado a las 7 PM
 programar_apagado_a_las_7pm() {
     local HORA_APAGADO="19:00"
     # Programar el apagado
@@ -33,7 +29,7 @@ programar_apagado_a_las_7pm() {
     echo "Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
 }
 
-# Función: Verifica si hoy es sábado o domingo
+### Función: Verifica si hoy es sábado o domingo
 es_fin_de_semana() {
   local DIA_DE_LA_SEMANA
   DIA_DE_LA_SEMANA=$(date +%u)  # 6 = sábado, 7 = domingo
@@ -45,7 +41,7 @@ es_fin_de_semana() {
   fi
 }
 
-# Función para verificar si una fecha está en una lista
+### Función para verificar si una fecha está en una lista
 es_fecha_en_lista() {
   local fecha="$1"
   shift
@@ -57,6 +53,37 @@ es_fecha_en_lista() {
   return 1
 }
 
+### Función para cargar FERIADOS ANUALES desde API o respaldo local
+cargar_feriados() {
+    local url="$1"
+    local respaldo_local="$2"
+
+    # Descargar desde API
+    local respuesta
+    respuesta=$(curl -s -f "$url")
+
+    if [[ $? -eq 0 ]]; then
+        echo "Feriados obtenidos desde API: $url" >> "$APAGADO_LOG"
+        # Extraer fechas de feriados usando jq  
+        FERIADOS_ANUALES=($(echo "$respuesta" | jq -r '.feriados[]'))
+        
+        # Actualizar respaldo local
+        echo "$respuesta" > "$respaldo_local"
+    else
+        echo "No se pudo acceder al API. Intentando con respaldo local..." >> "$APAGADO_LOG"
+        
+        # Usar respaldo local si está disponible
+        if [[ -f "$respaldo_local" ]]; then
+            echo "📁 Usando respaldo local: $respaldo_local" >> "$APAGADO_LOG"
+            FERIADOS_ANUALES=($(jq -r '.feriados[]' "$respaldo_local"))
+        else
+            echo "No hay respaldo local disponible."
+            FERIADOS_ANUALES=()
+        fi
+    return "$FERIADOS_ANUALES"
+    fi
+}
+
 # Verificar si hoy es fin de semana
 if [[ es_fin_de_semana -eq 0 ]]; then
   #shutdown -h "$HORA_APAGADO"
@@ -65,9 +92,11 @@ if [[ es_fin_de_semana -eq 0 ]]; then
 fi
 
 if [[ es_fin_de_semana -eq 1 ]]; then
-  echo "Hoy es $HOY y es día laboral." >> "$APAGADO_LOG"
+  echo "Hoy es $HOY y es día laboral. Programando el apagdo a las 19:00hr" >> "$APAGADO_LOG"
   programar_apagado_a_las_7pm
 fi
+
+FERIADOS=cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
 
 # Revisar si hoy es feriado
 if es_fecha_en_lista "$HOY" "${FERIADOS[@]}"; then
