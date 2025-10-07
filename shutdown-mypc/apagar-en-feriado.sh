@@ -7,7 +7,7 @@
 USUARIO=brivas
 
 # URL del API de feriados
-API_FERIADOS_URL="https://agplanilla.net/api/feriados"
+API_FERIADOS_URL="https://feriados.net/api/feriados"
 
 # Respaldo local de feriados en caso de que la API no esté disponible
 FERIADOS_LOCAL_BKUP="/home/$USUARIO/feriados.json"
