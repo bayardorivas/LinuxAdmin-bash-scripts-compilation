@@ -25,7 +25,7 @@ HOY=$(date +%Y-%m-%d)
 programar_apagado_a_las_7pm() {
     local HORA_APAGADO="19:00"
     # Programar el apagado
-    shutdown -h "$HORA_APAGADO"
+    #shutdown -h "$HORA_APAGADO"
     echo "Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
 }
 
@@ -57,7 +57,7 @@ es_fecha_en_lista() {
 cargar_feriados() {
     local url="$1"
     local respaldo_local="$2"
-
+    
     # Descargar desde API
     local respuesta
     respuesta=$(curl -s -f "$url")
@@ -74,32 +74,29 @@ cargar_feriados() {
         
         # Usar respaldo local si está disponible
         if [[ -f "$respaldo_local" ]]; then
-            echo "📁 Usando respaldo local: $respaldo_local" >> "$APAGADO_LOG"
+            echo "Usando respaldo local: $respaldo_local" >> "$APAGADO_LOG"
             FERIADOS_ANUALES=($(jq -r '.feriados[]' "$respaldo_local"))
         else
             echo "No hay respaldo local disponible."
             FERIADOS_ANUALES=()
         fi
-    return "$FERIADOS_ANUALES"
     fi
 }
 
 # Verificar si hoy es fin de semana
-if [[ es_fin_de_semana -eq 0 ]]; then
+if es_fin_de_semana; then
   #shutdown -h "$HORA_APAGADO"
   echo "Hoy es $HOY y es fin de semana." >> "$APAGADO_LOG"
   exit 0
-fi
-
-if [[ es_fin_de_semana -eq 1 ]]; then
+else
   echo "Hoy es $HOY y es día laboral. Programando el apagdo a las 19:00hr" >> "$APAGADO_LOG"
   programar_apagado_a_las_7pm
 fi
 
-FERIADOS=cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
+cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
 
 # Revisar si hoy es feriado
-if es_fecha_en_lista "$HOY" "${FERIADOS[@]}"; then
+if es_fecha_en_lista "$HOY" "${FERIADOS_ANUALES[@]}"; then
   echo "Hoy ($HOY) es feriado oficial. Apagando..." >> "$APAGADO_LOG"
 #  shutdown -h 0
   exit 0
