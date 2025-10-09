@@ -20,13 +20,13 @@ APAGADO_LOG="/home/$USUARIO/apagado.log"
 
 # Obtener la fecha de hoy en formato YYYY-MM-DD
 HOY=$(date +%Y-%m-%d)
-
+DATE_FOR_LOG=$(date "+%F "%T)
 ### Función para programar el apagado a las 7 PM
 programar_apagado_a_las_7pm() {
     local HORA_APAGADO="19:00"
     # Programar el apagado
     #shutdown -h "$HORA_APAGADO"
-    echo "Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
+    echo "[ $DATE_FOR_LOG ] - Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
 }
 
 ### Función: Verifica si hoy es sábado o domingo
@@ -34,7 +34,7 @@ es_fin_de_semana() {
   local DIA_DE_LA_SEMANA
   DIA_DE_LA_SEMANA=$(date +%u)  # 6 = sábado, 7 = domingo
   if [[ "$DIA_DE_LA_SEMANA" -ge 6 ]]; then
-    echo "Hoy es $HOY y es fin de semana." >> "$APAGADO_LOG"
+    echo "[ $DATE_FOR_LOG ] - Hoy es fin de semana." >> "$APAGADO_LOG"
     return 0
   else
     return 1
@@ -55,49 +55,49 @@ es_fecha_en_lista() {
 
 ### Función para cargar FERIADOS ANUALES desde API o respaldo local
 cargar_feriados() {
-    local url="$1"
+    local URL="$1"
     local respaldo_local="$2"
-    
-    # Descargar desde API
-    local respuesta
-    respuesta=$(curl -s -f "$url")
+    local TEMP_FILE="/tmp/feriados.json"
+    local STATUS_CODE
 
-    if [[ $? -eq 0 ]]; then
-        echo "Feriados obtenidos desde API: $url" >> "$APAGADO_LOG"
+    STATUS_CODE=$(curl -s -f -o "$TEMP_FILE" -w "%{http_code}" $URL)
+
+    if [[ "$STATUS_CODE" -ge 200 && "$STATUS_CODE" -lt 300 ]]; then
+        echo "[ $DATE_FOR_LOG ] - Feriados obtenidos desde API: $URL" >> "$APAGADO_LOG"
         # Extraer fechas de feriados usando jq  
-        FERIADOS_ANUALES=($(echo "$respuesta" | jq -r '.feriados[]'))
+        FERIADOS_ANUALES=($(jq -r '.feriados[]' "$TEMP_FILE"))
         
         # Actualizar respaldo local
-        echo "$respuesta" > "$respaldo_local"
+        cp "$TEMP_FILE" "$respaldo_local"
     else
-        echo "No se pudo acceder al API. Intentando con respaldo local..." >> "$APAGADO_LOG"
+        echo "[ $DATE_FOR_LOG ] - No se pudo acceder al API. Intentando con respaldo local..." >> "$APAGADO_LOG"
         
         # Usar respaldo local si está disponible
         if [[ -f "$respaldo_local" ]]; then
-            echo "Usando respaldo local: $respaldo_local" >> "$APAGADO_LOG"
+            echo "[ $DATE_FOR_LOG ] - Usando respaldo local: $respaldo_local" >> "$APAGADO_LOG"
             FERIADOS_ANUALES=($(jq -r '.feriados[]' "$respaldo_local"))
         else
-            echo "No hay respaldo local disponible."
+            echo "[ $DATE_FOR_LOG ] - No hay respaldo local disponible."
             FERIADOS_ANUALES=()
         fi
     fi
+    rm -f "TEMP_FILE"
 }
 
 # Verificar si hoy es fin de semana
 if es_fin_de_semana; then
   #shutdown -h "$HORA_APAGADO"
-  echo "Hoy es $HOY y es fin de semana." >> "$APAGADO_LOG"
+  echo "[ $DATE_FOR_LOG ] - Hoy es fin de semana." >> "$APAGADO_LOG"
   exit 0
 else
-  echo "Hoy es $HOY y es día laboral. Programando el apagdo a las 19:00hr" >> "$APAGADO_LOG"
-  programar_apagado_a_las_7pm
+  echo "[ $DATE_FOR_LOG ] - Hoy es día laboral." >> "$APAGADO_LOG"
 fi
 
 cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
 
 # Revisar si hoy es feriado
 if es_fecha_en_lista "$HOY" "${FERIADOS_ANUALES[@]}"; then
-  echo "Hoy ($HOY) es feriado oficial. Apagando..." >> "$APAGADO_LOG"
+  echo "[ $DATE_FOR_LOG ] - Hoy es feriado oficial. Apagando..." >> "$APAGADO_LOG"
 #  shutdown -h 0
   exit 0
 fi
@@ -107,7 +107,7 @@ if [[ -f "$VACACIONES_FILE" ]]; then
   while IFS= read -r fecha; do
     [[ -z "$fecha" ]] && continue  # ignorar líneas vacías
     if [[ "$fecha" == "$HOY" ]]; then
-      echo "Hoy ($HOY) está marcado como vacaciones. Apagando..." >> "$APAGADO_LOG"
+      echo "[ $DATE_FOR_LOG ] - Hoy está marcado como vacaciones para el usuario $USUARIO. Apagando..." >> "$APAGADO_LOG"
 #      shutdown -h 0
       exit 0
     fi
@@ -115,4 +115,5 @@ if [[ -f "$VACACIONES_FILE" ]]; then
 fi
 
 # Si no hay coincidencia
-echo "Hoy ($HOY) no es feriado ni vacaciones."
+echo "[ $DATE_FOR_LOG ] - Hoy no es feriado ni vacaciones."
+programar_apagado_a_las_7pm
