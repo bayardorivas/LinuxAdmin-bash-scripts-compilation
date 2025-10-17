@@ -21,6 +21,24 @@ APAGADO_LOG="/home/$USUARIO/apagado.log"
 # Obtener la fecha de hoy en formato YYYY-MM-DD
 HOY=$(date +%Y-%m-%d)
 DATE_FOR_LOG=$(date "+%F "%T)
+
+if [[ ! -f "$FERIADOS_LOCAL_BKUP" ]]; then
+    echo "[ $DATE_FOR_LOG ] - Creando el archivo local con las fechas de los feriados: $FERIADOS_LOCAL_BKUP" >> "$APAGADO_LOG"
+
+    echo '{
+  "feriados": [
+    "'$(date +%Y)'-01-01",
+    "'$(date +%Y)'-05-01",
+    "'$(date +%Y)'-05-30",
+    "'$(date +%Y)'-07-19",
+    "'$(date +%Y)'-09-14",
+    "'$(date +%Y)'-09-15",
+    "'$(date +%Y)'-12-08",
+    "'$(date +%Y)'-12-25"
+  ]
+}' > "$FERIADOS_LOCAL_BKUP"
+fi
+
 ### Función para programar el apagado a las 7 PM
 programar_apagado_a_las_7pm() {
     local HORA_APAGADO="19:00"
