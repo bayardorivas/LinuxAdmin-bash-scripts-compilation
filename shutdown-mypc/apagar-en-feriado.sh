@@ -119,7 +119,7 @@ cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
 # Revisar si hoy es feriado
 if es_fecha_en_lista "$HOY" "${FERIADOS_ANUALES[@]}"; then
   echo "[ $DATE_FOR_LOG ] - Hoy es feriado oficial. Apagando..." >> "$APAGADO_LOG"
-#  shutdown -h 0
+  shutdown -h 0
   exit 0
 fi
 
@@ -129,7 +129,7 @@ if [[ -f "$VACACIONES_FILE" ]]; then
     [[ -z "$fecha" ]] && continue  # ignorar líneas vacías
     if [[ "$fecha" == "$HOY" ]]; then
       echo "[ $DATE_FOR_LOG ] - Hoy está marcado como vacaciones para el usuario $USUARIO. Apagando..." >> "$APAGADO_LOG"
-#      shutdown -h 0
+      shutdown -h 0
       exit 0
     fi
   done < "$VACACIONES_FILE"
