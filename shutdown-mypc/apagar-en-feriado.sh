@@ -44,7 +44,7 @@ programar_apagado_a_las_7pm() {
     local HORA_APAGADO="18:00"
     # Programar el apagado
     shutdown -h "$HORA_APAGADO"
-    echo "[ $DATE_FOR_LOG ] - Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
+    echo "[ $DATE_FOR_LOG ] - Se programó el apagado a las $HORA_APAGADO hr." >> "$APAGADO_LOG"
 }
 
 ### Función: Verifica si hoy es sábado o domingo
