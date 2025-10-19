@@ -40,7 +40,7 @@ if [[ ! -f "$FERIADOS_LOCAL_BKUP" ]]; then
 fi
 
 ### Función para programar el apagado a las 7 PM
-programar_apagado_a_las_7pm() {
+programar_apagado() {
     local HORA_APAGADO="18:00"
     # Programar el apagado
     shutdown -h "$HORA_APAGADO"
@@ -135,4 +135,4 @@ fi
 
 # Si no hay coincidencia
 echo "[ $DATE_FOR_LOG ] - Hoy no es feriado ni vacaciones."
-programar_apagado_a_las_7pm
+programar_apagado
