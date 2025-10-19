@@ -100,7 +100,6 @@ cargar_feriados() {
         fi
     fi
 
-#echo "Lista de feriados desde adentro de la funcion que los carga: ${FERIADOS_ANUALES[@]}"
     rm -f "TEMP_FILE"
 }
 
@@ -114,7 +113,6 @@ else
 fi
 
 cargar_feriados "$API_FERIADOS_URL" "$FERIADOS_LOCAL_BKUP"
-#echo "Lista de feriados luego de llamar la funcion: ${FERIADOS_ANUALES[@]}"
 
 # Revisar si hoy es feriado
 if es_fecha_en_lista "$HOY" "${FERIADOS_ANUALES[@]}"; then
