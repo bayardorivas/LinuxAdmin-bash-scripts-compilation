@@ -106,8 +106,8 @@ cargar_feriados() {
 
 # Verificar si hoy es fin de semana
 if es_fin_de_semana; then
-  #shutdown -h "$HORA_APAGADO"
-  echo "[ $DATE_FOR_LOG ] - Hoy es fin de semana." >> "$APAGADO_LOG"
+  shutdown -h 0
+  echo "[ $DATE_FOR_LOG ] - Hoy es fin de semana, apagando..." >> "$APAGADO_LOG"
   exit 0
 else
   echo "[ $DATE_FOR_LOG ] - Hoy es día laboral." >> "$APAGADO_LOG"
