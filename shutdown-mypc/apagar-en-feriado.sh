@@ -41,9 +41,9 @@ fi
 
 ### Función para programar el apagado a las 7 PM
 programar_apagado_a_las_7pm() {
-    local HORA_APAGADO="19:00"
+    local HORA_APAGADO="18:00"
     # Programar el apagado
-    #shutdown -h "$HORA_APAGADO"
+    shutdown -h "$HORA_APAGADO"
     echo "[ $DATE_FOR_LOG ] - Se programó el apagado a las 7:00 PM." >> "$APAGADO_LOG"
 }
 
